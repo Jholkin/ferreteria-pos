@@ -8,7 +8,7 @@
             <b-breadcrumb-item tag='router-link' to="/cientes">Clientes</b-breadcrumb-item>
             <b-breadcrumb-item active>Agregar cliente</b-breadcrumb-item>
         </b-breadcrumb>
-        <form-cliente :cliente="datosCliente" @registrar="onRegistrar"/>
+        <form-cliente :cliente="datosCliente" @registrar="onRegistrar" @buscarClientePorDNI="onBuscarClientePorDNI"/>
         <b-loading :is-full-page="true" v-model="cargando" :can-cancel="false"></b-loading>
     </section>
 </template>
@@ -24,6 +24,7 @@
             cargando: false,
             datosCliente: {
                 nombre: "",
+                dni: "",
                 telefono: ""
             }
         }),
@@ -46,6 +47,9 @@
                         this.cargando = false
                     }
                 })
+            },
+            onCargandoAccion(flag){
+                this.cargando = flag
             }
         }
     }

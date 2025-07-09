@@ -23,6 +23,6 @@
 <script>
 	export default{
 		name: "NavComponent",
-		props: ["titulo", "link", "texto"]
+		props: ["titulo", "link", "texto"],
 	}
 </script>

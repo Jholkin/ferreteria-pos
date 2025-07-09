@@ -1,6 +1,6 @@
 <template>
     <section>
-        <nav-component :titulo="'Inventario'" :link="{ path: '/agregar-producto' }" :texto="'Agregar producto'"/>
+        <!--nav-component :titulo="'Inventario'" :link="{ path: '/agregar-producto' }" :texto="'Agregar producto'"/-->
         <b-breadcrumb
             align="is-left"
         >
@@ -77,29 +77,93 @@
                     {{ props.row.nombreCategoria }}
                 </b-table-column>
 
-                <b-table-column field="eliminar" label="Eliminar" v-slot="props">
-                    <b-button type="is-danger" @click="eliminar(props.row.id)">
-                        <b-icon icon="delete" />
+                <b-table-column field="kardex" label="Movimientos" v-slot="props">
+                    <b-button type="is-info" @click="abrirKardex(props.row)">
+                        <b-icon icon="clipboard-list-outline" />
                     </b-button>
                 </b-table-column>
 
-                <b-table-column field="editar" label="Editar" v-slot="props">
-                    <b-button type="is-info" @click="editar(props.row.id)">
-                        <b-icon icon="pen" />
-                    </b-button>
-                </b-table-column>
-
-                <b-table-column field="editar" label="Agregar" v-slot="props">
-                    <b-button type="is-primary" @click="agregarExistencia(props.row)">
-                        <b-icon icon="plus" />
-                    </b-button>
-                </b-table-column>
-
-                <b-table-column field="editar" label="Quitar" v-slot="props">
-                    <b-button type="is-warning" @click="quitarExistencia(props.row)">
-                        <b-icon icon="minus" />
-                    </b-button>
-                </b-table-column>
+                <b-modal
+                    v-model="mostrarModalKardex"
+                    has-modal-card
+                    trap-focus
+                    :destroy-on-hide="true"
+                    aria-role="dialog"
+                    aria-label="Kardex de producto"
+                    close-button-aria-label="Close"
+                    aria-modal>
+                    <div class="modal-card" style="width: 900px; max-width: 98vw;">
+                        <header class="modal-card-head">
+                            <p class="modal-card-title">
+                                Kardex de producto: <b>{{ kardexProductoSeleccionado.nombre }}</b> ({{ kardexProductoSeleccionado.codigo }})
+                            </p>
+                            <button type="button" class="delete" @click="cerrarModalKardex"/>
+                        </header>
+                        <section class="modal-card-body">
+                            <b-field grouped>
+                                <b-field label="Desde">
+                                    <b-datepicker v-model="filtroKardex.desde" placeholder="Desde" icon="calendar-today"/>
+                                </b-field>
+                                <b-field label="Hasta">
+                                    <b-datepicker v-model="filtroKardex.hasta" placeholder="Hasta" icon="calendar-today"/>
+                                </b-field>
+                                <b-field label="Movimiento">
+                                    <b-select v-model="filtroKardex.tipo" placeholder="Todos">
+                                        <option value="">Todos</option>
+                                        <option value="ingreso">Ingreso</option>
+                                        <option value="salida">Salida</option>
+                                        <option value="venta">Venta</option>
+                                        <option value="apartado">Apartado</option>
+                                    </b-select>
+                                </b-field>
+                                <b-button type="is-primary" @click="filtrarKardex">Filtrar</b-button>
+                            </b-field>
+                            <b-table
+                                :data="movimientosKardex"
+                                :striped="true"
+                                :hoverable="true"
+                                :narrowed="true"
+                                :mobile-cards="true"
+                            >
+                                <b-table-column field="fecha" label="Fecha" v-slot="props">
+                                    {{ props.row.fecha }}
+                                </b-table-column>
+                                <b-table-column field="movimiento" label="Movimiento" v-slot="props">
+                                    <b-tag :type="colorMovimiento(props.row.tipo)">
+                                        {{ props.row.tipo | capitalize }}
+                                    </b-tag>
+                                </b-table-column>
+                                <b-table-column field="documento" label="Documento" v-slot="props">
+                                    {{ props.row.documento || '-' }}
+                                </b-table-column>
+                                <b-table-column field="cantidad" label="Cantidad" v-slot="props">
+                                    <span :class="{'has-text-success': props.row.tipo === 'ingreso', 'has-text-danger': props.row.tipo !== 'ingreso'}">
+                                        {{ props.row.cantidad }}
+                                    </span>
+                                </b-table-column>
+                                <b-table-column field="existencia" label="Existencia" v-slot="props">
+                                    {{ props.row.existencia }}
+                                </b-table-column>
+                                <b-table-column field="usuario" label="Usuario" v-slot="props">
+                                    {{ props.row.usuario }}
+                                </b-table-column>
+                                <b-table-column field="observacion" label="Observación" v-slot="props">
+                                    {{ props.row.observacion || '-' }}
+                                </b-table-column>
+                            </b-table>
+                            <div class="mt-4">
+                                <b-message type="is-info" title="Totales del Kardex" size="is-small">
+                                    <div class="columns is-multiline">
+                                        <div class="column is-3"><b>Ingresos:</b> {{ totalIngresos }}</div>
+                                        <div class="column is-3"><b>Salidas:</b> {{ totalSalidas }}</div>
+                                        <div class="column is-3"><b>Ventas:</b> {{ totalVentas }}</div>
+                                        <div class="column is-3"><b>Existencia actual:</b> {{ existenciaActual }}</div>
+                                    </div>
+                                </b-message>
+                            </div>
+                        </section>
+                    </div>
+                </b-modal>
             </b-table>
         </div>
         <b-loading :is-full-page="true" v-model="cargando" :can-cancel="false"></b-loading>
@@ -127,7 +191,20 @@
             sortIconSize: 'is-medium',
             currentPage: 1,
             perPage: 5,
-            cartasTotales: []
+            cartasTotales: [],
+            // kardex data
+            mostrarModalKardex: false,
+            kardexProductoSeleccionado: {},
+            movimientosKardex: [],
+            filtroKardex: {
+                desde: null,
+                hasta: null,
+                tipo: ""
+            },
+            totalIngresos: 0,
+            totalSalidas: 0,
+            totalVentas: 0,
+            existenciaActual: 0
         }),
 
         mounted(){
@@ -135,113 +212,6 @@
         },
 
         methods: {
-            agregarExistencia(producto){
-               this.$buefy.dialog.prompt({
-                   message: '¿Cuántas piezas vas a agregar de ' + producto.nombre + '?',
-                   cancelText: 'Cancelar',
-                   confirmText: 'Agregar',
-                   inputAttrs: {
-                       type: 'number',
-                       placeholder: 'Escribe la cantidad de productos',
-                       value: '',
-                       min: 1
-                   },
-                   trapFocus: true,
-                   onConfirm: (value) =>{ 
-                     this.cargando = true
-                     HttpService.registrar('productos.php', {
-                        accion: 'agregar_existencia',
-                        cantidad: value,
-                        id: producto.id
-                     })
-                     .then(registrado => {
-                        if(registrado){
-                           this.cargando = false
-                           this.$buefy.toast.open(value + ' Productos agregados a ' + producto.nombre)
-                           this.obtenerProductos()
-                        }
-                     })
-                    
-                  }
-               })
-            },
-
-            quitarExistencia(producto){
-               this.$buefy.dialog.prompt({
-                   message: '¿Cuántas piezas vas a quitar de ' + producto.nombre + '?',
-                   cancelText: 'Cancelar',
-                   confirmText: 'Quitar',
-                   inputAttrs: {
-                       type: 'number',
-                       placeholder: 'Escribe la cantidad de productos',
-                       value: '',
-                       min: 1
-                   },
-                   trapFocus: true,
-                   onConfirm: (value) =>{ 
-                     if(value > producto.existencia){
-                        this.$buefy.toast.open('No puedes quitar más de ' + producto.existencia + ' productos')
-                        return
-                     }
-                     this.cargando = true
-                     HttpService.registrar('productos.php', {
-                        accion: 'restar_existencia',
-                        cantidad: value,
-                        id: producto.id
-                     })
-                     .then(registrado => {
-                        if(registrado){
-                           this.cargando = false
-                           this.$buefy.toast.open(value + ' Productos quitados a ' + producto.nombre)
-                           this.obtenerProductos()
-                        }
-                     })
-                    
-                  }
-               })
-            },
-
-            async eliminar(idProducto){
-                this.$buefy.dialog.confirm({
-                    title: 'Eliminar producto',
-                    message: 'Seguro que quieres <b>eliminar</b> este producto? Esta acción no se puede revertir.',
-                    confirmText: 'Sí, eliminar',
-                    cancelText: 'Cancelar',
-                    type: 'is-danger',
-                    hasIcon: true,
-                    onConfirm: () => {
-                        this.cargando = true
-                        HttpService.eliminar('productos.php',{
-                            accion: 'eliminar',
-                            id: idProducto
-                        })
-                        .then(resultado => {
-                            if(!resultado) {
-                                this.$buefy.toast.open('Error al eliminar')
-                                this.cargando = false
-                                return
-                            }
-
-                            if(resultado){
-                                this.cargando = false
-                                this.$buefy.toast.open({
-                                    type: 'is-info',
-                                    message: 'Producto eliminado.'
-                                })
-                                this.obtenerProductos()
-                            }
-                        })
-                    }
-                })
-            },
-
-            editar(idProducto){
-                this.$router.push({
-                    name: "EditarProducto",
-                    params: { id: idProducto}
-                })
-            },
-
             obtenerProductos(){
                 this.cargando = true
                 let payload = {
@@ -259,6 +229,48 @@
                     ]
                     this.cargando = false
                 })
+            },
+            abrirKardex(producto) {
+                this.kardexProductoSeleccionado = producto
+                this.filtroKardex = { desde: null, hasta: null, tipo: "" }
+                this.obtenerKardex()
+                this.mostrarModalKardex = true
+            },
+            cerrarModalKardex() {
+                this.mostrarModalKardex = false
+                this.movimientosKardex = []
+            },
+            async obtenerKardex() {
+                this.cargando = true
+                const payload = {
+                    accion: 'obtener_kardex',
+                    id: this.kardexProductoSeleccionado.id,
+                    desde: this.filtroKardex.desde,
+                    hasta: this.filtroKardex.hasta,
+                    tipo: this.filtroKardex.tipo
+                }
+                const respuesta = await HttpService.obtenerConConsultas('productos.php', payload)
+                this.movimientosKardex = respuesta.movimientos || []
+                this.totalIngresos = respuesta.totalIngresos || 0
+                this.totalSalidas = respuesta.totalSalidas || 0
+                this.totalVentas = respuesta.totalVentas || 0
+                this.existenciaActual = respuesta.existenciaActual || 0
+                this.cargando = false
+            },
+            filtrarKardex() {
+                this.obtenerKardex()
+            },
+            colorMovimiento(tipo) {
+                if (tipo === 'ingreso') return 'is-success'
+                if (tipo === 'salida') return 'is-danger'
+                if (tipo === 'venta') return 'is-warning'
+                return 'is-dark'
+            }
+        },
+        filters: {
+            capitalize(val) {
+                if (!val) return ''
+                return val.charAt(0).toUpperCase() + val.slice(1)
             }
         }
     }

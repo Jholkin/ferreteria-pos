@@ -44,12 +44,23 @@ switch ($accion) {
 		break;
 
 	case 'agregar_existencia':
-		echo json_encode(agregarExistenciaProducto($payload->cantidad, $payload->id));
+		echo json_encode(agregarExistenciaProducto($payload->cantidad, $payload->id, $payload->idUsuario));
 		break;
 	
 	case 'restar_existencia':
-		echo json_encode(restarExistenciaProducto($payload->cantidad, $payload->id));
+		echo json_encode(restarExistenciaProducto($payload->cantidad, $payload->id, $payload->idUsuario));
 		break;
+
+	case 'actualizar_existencia_por_codigo':
+		echo json_encode(agregarExistenciaPorCodigo($payload->existencia, $payload->codigo, $payload->idUsuario));
+		break;
+	case 'obtener_kardex':
+        $idProducto = $payload->id;
+        $desde = isset($payload->desde) && $payload->desde ? $payload->desde : null;
+        $hasta = isset($payload->hasta) && $payload->hasta ? $payload->hasta : null;
+        $tipo = isset($payload->tipo) ? $payload->tipo : '';
+        echo json_encode(obtenerKardexProducto($idProducto, $desde, $hasta, $tipo));
+        break;
 	
 	default:
 		echo json_encode("No se reconoce");

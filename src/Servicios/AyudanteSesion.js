@@ -9,11 +9,13 @@ const AyudateSesion = {
 		const id = localStorage.getItem('id')
 		const usuario = localStorage.getItem('usuario')
 		const nombre = localStorage.getItem('nombre')
+		const rol = localStorage.getItem('rol')
 
 		return {
 			id: id,
 			usuario: usuario,
-			nombre: nombre
+			nombre: nombre,
+			rol: rol
 		}
 	},
 
@@ -21,6 +23,7 @@ const AyudateSesion = {
 		localStorage.setItem('id', usuario.id)
 		localStorage.setItem('usuario', usuario.usuario)
 		localStorage.setItem('nombre', usuario.nombre)
+		localStorage.setItem('rol', usuario.rol)
 	},
 
 	establecerDatosNegocio(datos){
@@ -41,6 +44,7 @@ const AyudateSesion = {
 		localStorage.removeItem('id')
 		localStorage.removeItem('usuario')
 		localStorage.removeItem('nombre')
+		localStorage.removeItem('rol')
 		location.reload()
 	}
 }

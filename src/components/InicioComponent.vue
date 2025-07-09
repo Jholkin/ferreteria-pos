@@ -115,6 +115,7 @@
     import CartasTotales from './Extras/CartasTotales'
     import SelectAnio from './Extras/SelectAnio'
     import SelectMes from './Extras/SelectMes'
+    import AyudanteSesion from '../Servicios/AyudanteSesion'
 
     export default{
         name: "InicioComponent",
@@ -129,10 +130,12 @@
             productosMayoresVentas: [],
             mesSeleccionado: new Date().getMonth()+1,
             anioSeleccionado: new Date().getFullYear(),
-            limite: 5
+            limite: 5,
+            userId: "",
         }),
 
         mounted(){
+            this.userId = AyudanteSesion.obtenerDatosSesion().rol === 'admin' ? '' : AyudanteSesion.obtenerDatosSesion().id
             this.obtenerIngresos()
             this.obtenerTotalesMeses(this.anioSeleccionado)
             this.obtenerTotalesUsuarios()
@@ -185,7 +188,8 @@
 
             obtenerIngresos(){
                 HttpService.obtenerConConsultas('inicio.php',{
-                    accion: 'obtener_ingresos'
+                    accion: 'obtener_ingresos',
+                    userId: this.userId
                 })
                 .then(resultado => {
                     this.crearCartas(resultado)
@@ -194,7 +198,8 @@
 
             obtenerMarcasCategorias(){
                 HttpService.obtenerConConsultas('inicio.php',{
-                    accion: 'obtener_marcas_categorias'
+                    accion: 'obtener_marcas_categorias',
+                    userId: this.userId
                 })
                 .then(resultado => {
                     this.crearGraficaVentasCategorias(resultado.categorias)
@@ -205,7 +210,8 @@
             obtenerTotalesMeses(anio){
                 HttpService.obtenerConConsultas('inicio.php',{
                     accion: 'obtener_totales_meses',
-                    anioSeleccionado: anio
+                    anioSeleccionado: anio,
+                    userId: this.userId
                 })
                 .then(resultado => {
                     this.totalesMeses = Utiles.cambiarNumeroANombreMes(resultado)
@@ -217,7 +223,8 @@
                 HttpService.obtenerConConsultas('inicio.php',{
                     accion: 'obtener_totales_dia',
                     mesSeleccionado: mes,
-                    anioSeleccionado: anio
+                    anioSeleccionado: anio,
+                    userId: this.userId
                 })
                 .then(resultado => {
                     this.totalesDia = resultado
@@ -227,7 +234,8 @@
 
             obtenerTotalesUsuarios(){
                 HttpService.obtenerConConsultas('inicio.php',{
-                    accion: 'obtener_totales_usuarios'
+                    accion: 'obtener_totales_usuarios',
+                    userId: this.userId
                 })
                 .then(resultado => {
                     this.totalesUsuarios = resultado
@@ -237,7 +245,8 @@
 
             obtenerTotalesClientes(){
                 HttpService.obtenerConConsultas('inicio.php',{
-                    accion: 'obtener_totales_clientes'
+                    accion: 'obtener_totales_clientes',
+                    userId: this.userId
                 })
                 .then(resultado => {
                     this.totalesClientes = resultado
@@ -248,7 +257,8 @@
             obtenerProductosMayoresVentas(limiteSeleccionado){
                 HttpService.obtenerConConsultas('inicio.php',{
                     accion: 'obtener_productos_mayores', 
-                    limite: limiteSeleccionado
+                    limite: limiteSeleccionado,
+                    userId: this.userId
                 })
                 .then(resultado => {
                     this.productosMayoresVentas = resultado

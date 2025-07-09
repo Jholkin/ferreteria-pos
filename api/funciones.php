@@ -55,49 +55,102 @@ function registrarAjustes($ajustes){
 
 */
 
-function obtenerVentasPorDiaMes($mes, $anio){
+function filtrarPorUsuarioSiNoEsAdmin($filtros, $usuarioId){
+	if($usuarioId){
+		$filtros->usuarioId = $usuarioId;
+	}else{
+		$filtros->usuarioId = null;
+	}
+	return $filtros;
+}
+
+function obtenerVentasPorDiaMes($mes, $anio, $userId){
 	$sentencia = "SELECT DATE_FORMAT(fecha, '%Y-%m-%d') AS dia, SUM(total) AS totalVentas FROM ventas 
 	WHERE MONTH(fecha) = ? AND YEAR(fecha) = ?
 	GROUP BY dia";
-	return selectPrepare($sentencia, [$mes, $anio]);
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia .= " AND idUsuario = ?";
+		$parametros = [$mes, $anio, $userId];
+	} else {
+		$parametros = [$mes, $anio];
+	}
+	return selectPrepare($sentencia, $parametros);
 }
 
-function obtenerTotalesVentasPorMes($anio){
+function obtenerTotalesVentasPorMes($anio,$userId){
+	$parametros = [$anio];
 	$sentencia = "SELECT MONTH(fecha) AS mes, SUM(total) AS totalVentas FROM ventas 
         WHERE YEAR(fecha) = ? 
         GROUP BY MONTH(fecha) ORDER BY mes ASC";
-    return selectPrepare($sentencia, [$anio]);
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia = "SELECT MONTH(fecha) AS mes, SUM(total) AS totalVentas FROM ventas 
+		WHERE YEAR(fecha) = ? AND idUsuario = ?
+		GROUP BY MONTH(fecha) ORDER BY mes ASC";
+		$parametros = [$anio, $userId];
+	}
+    return selectPrepare($sentencia, $parametros);
 }
 
-function calcularTotalIngresos(){
-	$sentencia = "SELECT (SELECT SUM(total) FROM ventas) + (SELECT SUM(pagado) FROM cuentas_apartados) AS totalIngresos";
-	return selectRegresandoObjeto($sentencia)->totalIngresos;
+function calcularTotalIngresos($userId){
+	$parametros = [];
+	$sentencia = "SELECT (SELECT SUM(v.total) FROM ventas v) + (SELECT SUM(pagado) FROM cuentas_apartados) AS totalIngresos";
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia = "SELECT (SELECT IFNULL(SUM(v.total),0) FROM ventas v where v.idUsuario=?) + (SELECT IFNULL(SUM(ca.pagado),0) FROM cuentas_apartados ca where ca.idUsuario=?) AS totalIngresos";
+		$parametros = [$userId, $userId];
+	}
+	return selectRegresandoObjeto($sentencia, $parametros)->totalIngresos;
 }
 
-function calcularTotalIngresosHoy(){
+function calcularTotalIngresosHoy($userId){
+	$parametros = [];
 	$sentencia = "SELECT 
 	(SELECT IFNULL(SUM(total),0) FROM ventas WHERE DATE(fecha) = CURDATE()) + 
 	(SELECT IFNULL(SUM(pagado),0) FROM cuentas_apartados WHERE DATE(fecha) = CURDATE()) AS totalIngresos";
-	return selectRegresandoObjeto($sentencia)->totalIngresos;
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia = "SELECT 
+		(SELECT IFNULL(SUM(total),0) FROM ventas WHERE DATE(fecha) = CURDATE() AND idUsuario = ?) + 
+		(SELECT IFNULL(SUM(pagado),0) FROM cuentas_apartados WHERE DATE(fecha) = CURDATE() AND idUsuario = ?) AS totalIngresos";
+		$parametros = [$userId, $userId];
+	}
+	return selectRegresandoObjeto($sentencia,$parametros)->totalIngresos;
 }
 
-function calcularTotalIngresosSemana(){
+function calcularTotalIngresosSemana($userId){
+	$parametros = [];
 	$sentencia = "SELECT 
 	(SELECT IFNULL(SUM(total),0) FROM ventas WHERE WEEK(fecha) = WEEK(NOW())) + 
 	(SELECT IFNULL(SUM(pagado),0) FROM cuentas_apartados WHERE WEEK(fecha) = WEEK(NOW())) AS totalIngresos";
-	return selectRegresandoObjeto($sentencia)->totalIngresos;
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia = "SELECT 
+		(SELECT IFNULL(SUM(total),0) FROM ventas WHERE WEEK(fecha) = WEEK(NOW()) AND idUsuario = ?) + 
+		(SELECT IFNULL(SUM(pagado),0) FROM cuentas_apartados WHERE WEEK(fecha) = WEEK(NOW()) AND idUsuario = ?) AS totalIngresos";
+		$parametros = [$userId, $userId];
+	}
+	return selectRegresandoObjeto($sentencia,$parametros)->totalIngresos;
 }
 
-function calcularTotalIngresosMes(){
+function calcularTotalIngresosMes($userId){
+	$parametros = [];
 	$sentencia = "SELECT 
 	(SELECT IFNULL(SUM(total),0) FROM ventas WHERE MONTH(fecha) = MONTH(CURRENT_DATE()) AND YEAR(fecha) = YEAR(CURRENT_DATE())) + 
 	(SELECT IFNULL(SUM(pagado),0) FROM cuentas_apartados WHERE MONTH(fecha) = MONTH(CURRENT_DATE()) AND YEAR(fecha) = YEAR(CURRENT_DATE())) AS totalIngresos";
-	return selectRegresandoObjeto($sentencia)->totalIngresos;
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia = "SELECT 
+		(SELECT IFNULL(SUM(total),0) FROM ventas WHERE MONTH(fecha) = MONTH(CURRENT_DATE()) AND YEAR(fecha) = YEAR(CURRENT_DATE()) AND idUsuario = ?) + 
+		(SELECT IFNULL(SUM(pagado),0) FROM cuentas_apartados WHERE MONTH(fecha) = MONTH(CURRENT_DATE()) AND YEAR(fecha) = YEAR(CURRENT_DATE()) AND idUsuario = ?) AS totalIngresos";
+		$parametros = [$userId, $userId];
+	}
+	return selectRegresandoObjeto($sentencia,$parametros)->totalIngresos;
 }
 
-function calcularIngresosPendientes(){
+function calcularIngresosPendientes($userId){
+	$parametros = [];
 	$sentencia = "SELECT IFNULL(SUM(porPagar), 0) AS pendientes FROM cuentas_apartados";
-	return selectRegresandoObjeto($sentencia)->pendientes;
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia = "SELECT IFNULL(SUM(porPagar), 0) AS pendientes FROM cuentas_apartados WHERE idUsuario = ?";
+		$parametros = [$userId];
+	}
+	return selectRegresandoObjeto($sentencia,$parametros)->pendientes;
 }
 
 function eliminarCotizacion($id){
@@ -131,14 +184,23 @@ function verificarSiLiquidaApartado($id){
 function obtenerTotalVentas($filtros){
 	$fechaInicio = ($filtros->fechaInicio === "") ? FECHA_HOY : $filtros->fechaInicio;
 	$fechaFin = ($filtros->fechaFin === "") ? FECHA_HOY : $filtros->fechaFin;
-	$sentencia = "SELECT SUM(total) AS totalVentas FROM ventas WHERE DATE(ventas.fecha) >= ? AND  DATE(ventas.fecha) <= ?";
-	$parametros = [$fechaInicio, $fechaFin];
+	if($filtros->usuarioId){
+		$sentencia = "SELECT SUM(total) AS totalVentas FROM ventas WHERE DATE(ventas.fecha) >= ? AND  DATE(ventas.fecha) <= ? AND idUsuario = ?";
+		$parametros = [$fechaInicio, $fechaFin, $filtros->usuarioId];
+	}else{
+		$sentencia = "SELECT SUM(total) AS totalVentas FROM ventas WHERE DATE(ventas.fecha) >= ? AND  DATE(ventas.fecha) <= ?";
+		$parametros = [$fechaInicio, $fechaFin];
+	}
 	return selectRegresandoObjeto($sentencia, $parametros)->totalVentas;
 }
 
 function obtenerTotalCuentasApartados($filtros, $tipo){
 	$sentencia = "SELECT SUM(total) AS total FROM cuentas_apartados WHERE tipo = ?";
 	$parametros = [$tipo];
+	if (isset($filtros->usuarioId) && $filtros->usuarioId) {
+		$sentencia .= " AND idUsuario = ?";
+		array_push($parametros, $filtros->usuarioId);
+	}
 	if($filtros->fechaInicio){
 		$sentencia .= " AND (DATE(cuentas_apartados.fecha) >= ? AND  DATE(cuentas_apartados.fecha) <= ?)";
 		array_push($parametros, $filtros->fechaInicio);
@@ -150,7 +212,10 @@ function obtenerTotalCuentasApartados($filtros, $tipo){
 function obtenerTotalPorPagarCuentasApartados($filtros, $tipo){
 	$sentencia = "SELECT SUM(porPagar) AS porPagar FROM cuentas_apartados WHERE tipo = ?";
 	$parametros = [$tipo];
-
+	if (isset($filtros->usuarioId) && $filtros->usuarioId) {
+		$sentencia .= " AND idUsuario = ?";
+		array_push($parametros, $filtros->usuarioId);
+	}
 	if($filtros->fechaInicio){
 		$sentencia .= " AND (DATE(cuentas_apartados.fecha) >= ? AND  DATE(cuentas_apartados.fecha) <= ?)";
 		array_push($parametros, $filtros->fechaInicio);
@@ -162,6 +227,10 @@ function obtenerTotalPorPagarCuentasApartados($filtros, $tipo){
 function obtenerPagosCuentasApartados($filtros, $tipo){
 	$sentencia = "SELECT SUM(pagado) AS totalPagos FROM cuentas_apartados WHERE tipo = ?";
 	$parametros = [$tipo];
+	if (isset($filtros->usuarioId) && $filtros->usuarioId) {
+		$sentencia .= " AND idUsuario = ?";
+		array_push($parametros, $filtros->usuarioId);
+	}
 	if($filtros->fechaInicio){
 		$sentencia .= " AND (DATE(cuentas_apartados.fecha) >= ? AND  DATE(cuentas_apartados.fecha) <= ?)";
 		array_push($parametros, $filtros->fechaInicio);
@@ -175,16 +244,19 @@ function obtenerCuentasApartados($filtros, $tipo){
 		FROM cuentas_apartados
 		LEFT JOIN clientes ON clientes.id = cuentas_apartados.idCliente
 		LEFT JOIN usuarios ON usuarios.id = cuentas_apartados.idUsuario
-		WHERE cuentas_apartados.tipo = ? 
-		ORDER BY cuentas_apartados.id DESC";
+		WHERE cuentas_apartados.tipo = ? ";
 
 	$parametros = [$tipo];
-
+	if(isset($filtros->usuarioId) && $filtros->usuarioId){
+		$sentencia .= " AND cuentas_apartados.idUsuario = ?";
+		array_push($parametros, $filtros->usuarioId);
+	}
 	if($filtros->fechaInicio){
 		$sentencia .= " AND (DATE(cuentas_apartados.fecha) >= ? AND  DATE(cuentas_apartados.fecha) <= ?)";
 		array_push($parametros, $filtros->fechaInicio);
 		array_push($parametros, $filtros->fechaFin);
 	}
+	$sentencia .= " ORDER BY cuentas_apartados.id DESC";
 	$cuentas =  selectPrepare($sentencia, $parametros);
 	return agregarProductosVendidos($cuentas, $tipo);
 }
@@ -196,7 +268,10 @@ function obtenerCotizaciones($filtros, $tipo){
 		LEFT JOIN usuarios ON usuarios.id = cotizaciones.idUsuario 
 		WHERE 1 ";
 	$parametros = [];
-
+	if (isset($filtros->usuarioId) && $filtros->usuarioId) {
+		$sentencia .= " AND cotizaciones.idUsuario = ?";
+		array_push($parametros, $filtros->usuarioId);
+	}
 	if($filtros->fechaInicio){
 		$sentencia .= " AND (DATE(cotizaciones.fecha) >= ? AND  DATE(cotizaciones.fecha) <= ?)";
 		array_push($parametros, $filtros->fechaInicio);
@@ -211,13 +286,22 @@ function obtenerCotizaciones($filtros, $tipo){
 function obtenerVentas($filtros){
 	$fechaInicio = ($filtros->fechaInicio === "") ? FECHA_HOY : $filtros->fechaInicio;
 	$fechaFin = ($filtros->fechaFin === "") ? FECHA_HOY : $filtros->fechaFin;
+	
+	
 	$sentencia = "SELECT ventas.id, ventas.fecha, ventas.total, ventas.pagado, IFNULL(clientes.nombre, 'MOSTRADOR') AS nombreCliente, IFNULL(usuarios.usuario, 'NO ENCONTRADO') AS nombreUsuario 
 		FROM ventas
 		LEFT JOIN clientes ON clientes.id = ventas.idCliente
 		LEFT JOIN usuarios ON usuarios.id = ventas.idUsuario
-		WHERE DATE(ventas.fecha) >= ? AND  DATE(ventas.fecha) <= ?
-		ORDER BY ventas.id DESC";
+		WHERE DATE(ventas.fecha) >= ? AND  DATE(ventas.fecha) <= ?";
+
+	if($filtros->usuarioId){
+		$sentencia .= " AND idUsuario = ?";
+	}
+	$sentencia .= " ORDER BY ventas.id DESC";
 	$parametros = [$fechaInicio, $fechaFin];
+	if($filtros->usuarioId){
+		array_push($parametros, $filtros->usuarioId);
+	}
 	$ventas =  selectPrepare($sentencia, $parametros);
 	return agregarProductosVendidos($ventas, 'venta');
 }
@@ -238,8 +322,26 @@ function obtenerProductosVendidos($id, $tipo) {
 	return selectPrepare($sentencia, $parametros);
 }
 
+function registrarOActualizarCliente($cliente){
+	$clienteExistente = obtenerClientePorDni($cliente->dni);
+	if (!$clienteExistente) {
+		$clienteExistente = obtenerClientesPorNombre($cliente->nombre);
+	}
+	if($clienteExistente){
+		$cliente->id = $clienteExistente->id;
+		editarCliente($cliente);
+		return $clienteExistente->id;
+	}else{
+		registrarCliente($cliente);
+		return obtenerClientePorDni($cliente->dni)->id;
+	}
+}
+
 function terminarVenta($venta){
+	date_default_timezone_set('America/Lima');
 	$tipo = $venta->tipo;
+	$clienteId = (isset($venta->cliente)) ? $venta->cliente : 0;
+	if ($clienteId === 0) $venta->cliente = registrarOActualizarCliente($venta->objetoCliente);
 
 	switch ($tipo) {
 		case 'venta':
@@ -274,9 +376,11 @@ function vender($venta){
 	if(!$registrado) return false;
 
 	$idVenta = obtenerUltimoId('ventas');
-	$productosRegistrados = registrarProductosVendidos($venta->productos, $idVenta, 'venta');
-	$productosEditados = descontarProductos($venta->productos);
-	if(count($productosRegistrados)>0 && count($productosEditados)>0) return true;
+	$venta->tipo = 'venta';
+	$productosRegistrados = registrarProductosVendidosYKardex($venta, $idVenta);
+	//$productosEditados = descontarProductos($venta->productos);
+	//if(count($productosRegistrados)>0 && count($productosEditados)>0) return true;
+	if(count($productosRegistrados)>0) return true;
 }
 
 function agregarCuentaApartado($venta){
@@ -288,8 +392,8 @@ function agregarCuentaApartado($venta){
 	if(!$registrado) return false;
 
 	$idVenta = obtenerUltimoId('cuentas_apartados');
-	$productosRegistrados = registrarProductosVendidos($venta->productos, $idVenta, $venta->tipo);
-	if($venta->tipo === 'cuenta') descontarProductos($venta->productos);
+	$productosRegistrados = registrarProductosVendidosYKardex($venta, $idVenta);
+	//if($venta->tipo === 'cuenta') descontarProductos($venta->productos);
 	if(count($productosRegistrados)>0 ) return true;
 }
 
@@ -313,6 +417,30 @@ function registrarProductosVendidos($productos, $idReferencia, $tipo){
 		$parametros = [$producto->cantidad, $producto->precio, $producto->id, $idReferencia, $tipo];
 		$productoRegistrado = insertar($sentencia, $parametros);
 		if($productoRegistrado) array_push($resultados, 1);
+	}
+
+	return $resultados;
+}
+
+function registrarProductosVendidosYKardex($venta, $idReferencia) {
+	$sentencia = "INSERT INTO productos_vendidos (cantidad, precio, idProducto, idReferencia, tipo) VALUES(?,?,?,?,?)";
+	$resultados = [];
+
+	foreach ($venta->productos as $producto) {
+		$parametros = [$producto->cantidad, $producto->precio, $producto->id, $idReferencia, $venta->tipo];
+		$productoRegistrado = insertar($sentencia, $parametros);
+		if($productoRegistrado) array_push($resultados, 1);
+		$kardex = (object) [
+			'idProducto' => $producto->id,
+			'fecha' => date("Y-m-d H:i:s"),
+			'tipo' => $venta->tipo,
+			'cantidad' => $producto->cantidad,
+			'idReferencia' => $idReferencia,
+			'idUsuario' => $venta->usuario,
+			'observacion' => $venta->tipo . ' realizada',
+			'multiplicador' => -1
+		];
+		insertarKardexProducto($kardex);
 	}
 
 	return $resultados;
@@ -380,10 +508,15 @@ function calcularTotalIngresosMesUsuario($idUsuario){
 	return selectRegresandoObjeto($sentencia, $parametros)->totalIngresos;
 }
 
-function obtenerVentasPorUsuario(){
+function obtenerVentasPorUsuario($userId){
 	$sentencia = "SELECT usuarios.usuario, SUM(ventas.total) AS totalVentas  FROM ventas
 	INNER JOIN usuarios ON usuarios.id = ventas.idUsuario
 	GROUP BY usuarios.id";
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia .= " HAVING usuarios.id = ?";
+		$parametros = [$userId];
+		return selectPrepare($sentencia, $parametros);
+	}
 	return selectQuery($sentencia);
 }
 
@@ -397,7 +530,8 @@ function iniciarSesion($usuario){
 			$datos = [
 				"id" => $resultado->id,
 				"usuario" => $resultado->usuario,
-				"nombre" => $resultado->nombre
+				"nombre" => $resultado->nombre,
+				"rol" => $resultado->rol
 			];	
 
 			return ["estado" => $loginCorrecto, "usuario" => $datos];
@@ -423,19 +557,19 @@ function cambiarPassword($idUsuario, $password){
 	return editar($sentencia, $parametros);
 }
 function registrarUsuario($usuario){
-	$sentencia = "INSERT INTO usuarios (usuario, nombre, telefono, password) VALUES (?,?,?,?)";
-	$parametros = [$usuario->usuario, $usuario->nombre, $usuario->telefono, $usuario->password];
+	$sentencia = "INSERT INTO usuarios (usuario, nombre, telefono, password, rol) VALUES (?,?,?,?,?)";
+	$parametros = [$usuario->usuario, $usuario->nombre, $usuario->telefono, $usuario->password, $usuario->rol];
 	return insertar($sentencia, $parametros);
 }
 
 function obtenerUsuarioPorId($id){
-	$sentencia = "SELECT id, usuario, nombre, telefono FROM usuarios WHERE id = ?";
+	$sentencia = "SELECT id, usuario, nombre, telefono, rol FROM usuarios WHERE id = ?";
 	return selectRegresandoObjeto($sentencia, [$id]);
 }
 
 function editarUsuario($usuario){
-	$sentencia = "UPDATE usuarios SET usuario = ?, nombre = ?, telefono = ? WHERE id = ?";
-	$parametros = [$usuario->usuario, $usuario->nombre, $usuario->telefono, $usuario->id];
+	$sentencia = "UPDATE usuarios SET usuario = ?, nombre = ?, telefono = ?, rol = ? WHERE id = ?";
+	$parametros = [$usuario->usuario, $usuario->nombre, $usuario->telefono, $usuario->rol, $usuario->id];
 	return editar($sentencia, $parametros);
 }
 
@@ -460,17 +594,29 @@ function obtenerUsuarios(){
 
 */
 
-function obtenerVentasPorCliente(){
+function obtenerVentasPorCliente($userId){
 	$sentencia = "SELECT clientes.nombre, SUM(ventas.total) AS totalVentas  FROM ventas
-	INNER JOIN clientes ON clientes.id = ventas.idCliente
-	GROUP BY clientes.id";
+	INNER JOIN clientes ON clientes.id = ventas.idCliente";
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia .= " WHERE ventas.idUsuario = ?";
+		$parametros = [$userId];
+	}
+	$sentencia .= " GROUP BY clientes.id";
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		return selectPrepare($sentencia, $parametros);
+	}
 	return selectQuery($sentencia);
 }
 
+function obtenerClientePorDni($dni){
+	$sentencia = "SELECT * FROM clientes WHERE dni = ?";
+	$parametros = [$dni];
+	return selectRegresandoObjeto($sentencia, $parametros);
+}
 
 function obtenerClientesPorNombre($nombre){
-	$sentencia = "SELECT * FROM clientes WHERE nombre LIKE ?";
-	$parametros = ["%".$nombre."%"];
+	$sentencia = "SELECT * FROM clientes WHERE UPPER(nombre) LIKE ?";
+	$parametros = ["%".strtoupper($nombre)."%"];
 	return selectPrepare($sentencia, $parametros);
 }
 
@@ -480,8 +626,8 @@ function obtenerClientes(){
 }
 
 function registrarCliente($cliente){
-	$sentencia = "INSERT INTO clientes (nombre, telefono) VALUES (?,?)";
-	$parametros = [$cliente->nombre, $cliente->telefono];
+	$sentencia = "INSERT INTO clientes (nombre, dni, telefono) VALUES (?,?,?)";
+	$parametros = [$cliente->nombre, $cliente->dni, $cliente->telefono];
 	return insertar($sentencia, $parametros);
 }
 
@@ -491,8 +637,8 @@ function obtenerClientePorId($id){
 }
 
 function editarCliente($cliente){
-	$sentencia = "UPDATE clientes SET nombre = ?, telefono = ? WHERE id = ?";
-	$parametros = [$cliente->nombre, $cliente->telefono, $cliente->id];
+	$sentencia = "UPDATE clientes SET nombre = ?, dni = ?, telefono = ? WHERE id = ?";
+	$parametros = [$cliente->nombre, $cliente->dni, $cliente->telefono, $cliente->id];
 	return editar($sentencia, $parametros);
 }
 
@@ -511,26 +657,120 @@ function eliminarCliente($id){
 |___|    |___|  |_||_______||______| |_______||_______|  |___|  |_______||_______|
 
 */
-function obtenerProductosMasVendidos($limite){
+function insertarKardexProducto($kardex) {
+	date_default_timezone_set('America/Lima');
+	$sentencia = "INSERT INTO kardex (idProducto, fecha, tipo, cantidad, idReferencia, idUsuario, observacion, multiplicador) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+	$parametros = [
+		$kardex->idProducto,
+		$kardex->fecha,
+		$kardex->tipo,
+		$kardex->cantidad,
+		$kardex->idReferencia,
+		$kardex->idUsuario,
+		$kardex->observacion,
+		$kardex->multiplicador
+	];
+	return insertar($sentencia, $parametros);
+}
+
+function obtenerKardexProducto($idProducto, $desde = null, $hasta = null, $tipo = '') {
+    $parametros = [$idProducto];
+    $where = " WHERE t.idProducto = ? ";
+
+    if ($desde) {
+        $where .= " AND DATE(t.fecha) >= ? ";
+        $parametros[] = $desde;
+    }
+    if ($hasta) {
+        $where .= " AND DATE(t.fecha) <= ? ";
+        $parametros[] = $hasta;
+    }
+    if ($tipo) {
+        $where .= " AND t.tipo = ? ";
+        $parametros[] = $tipo;
+    }
+
+    $sentencia = "SELECT t.*, u.usuario from kardex t INNER JOIN usuarios u ON u.id = t.idUsuario ";
+	$sentencia .= $where;
+
+    $movimientos = selectPrepare($sentencia, $parametros);
+
+    $totalIngresos = 0;
+    $totalSalidas = 0;
+    $totalVentas = 0;
+    $existenciaActual = 0;
+	$existencia = 0;
+
+    foreach ($movimientos as $mov) {
+		$mov->cantidad = $mov->cantidad * $mov->multiplicador; // Ajustar cantidad por el multiplicador
+        $existenciaActual += $mov->cantidad;
+		$mov->existencia = $existenciaActual;
+        if ($mov->tipo === 'ingreso') $totalIngresos += (int)$mov->cantidad;
+        if ($mov->tipo === 'salida') $totalSalidas += (int)$mov->cantidad;
+        if ($mov->tipo === 'venta') $totalVentas += (int)$mov->cantidad;
+    }
+
+    return [
+        "movimientos" => $movimientos,
+        "totalIngresos" => $totalIngresos,
+        "totalSalidas" => $totalSalidas,
+        "totalVentas" => $totalVentas,
+        "existenciaActual" => $existenciaActual
+    ];
+}
+
+function obtenerProductosMasVendidos($limite, $userId){
 	$sentencia = "SELECT SUM(productos_vendidos.cantidad * productos_vendidos.precio) AS total, SUM(productos_vendidos.cantidad) AS unidades,
 	productos.nombre FROM productos_vendidos INNER JOIN productos ON productos.id = productos_vendidos.idProducto
 	WHERE productos_vendidos.tipo = 'venta'
 	GROUP BY productos_vendidos.idProducto
 	ORDER BY total DESC
 	LIMIT ?";
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia = "SELECT SUM(productos_vendidos.cantidad * productos_vendidos.precio) AS total, SUM(productos_vendidos.cantidad) AS unidades,
+		productos.nombre FROM productos_vendidos INNER JOIN ventas on ventas.id = productos_vendidos.idReferencia INNER JOIN productos ON productos.id = productos_vendidos.idProducto
+		WHERE productos_vendidos.tipo = 'venta' AND ventas.idUsuario = ?
+		GROUP BY productos_vendidos.idProducto
+		ORDER BY total DESC
+		LIMIT ?";
+		return selectPrepare($sentencia, [$userId, $limite]);
+	}
 	return selectPrepare($sentencia, [$limite]);
 }
 
-function agregarExistenciaProducto($cantidad, $id){
-	$sentencia = "UPDATE productos SET existencia =  existencia + ? WHERE id = ?";
-	$parametros = [$cantidad, $id];
-	return editar($sentencia, $parametros);
+function agregarExistenciaProducto($cantidad, $id, $idUsuario = 0){
+	/*$sentencia = "UPDATE productos SET existencia =  existencia + ? WHERE id = ?";
+	$parametros = [$cantidad, $id];*/
+
+	$kardex = (object) [
+		'idProducto' => $id,
+		'fecha' => date("Y-m-d H:i:s"),
+		'tipo' => 'ingreso',
+		'cantidad' => $cantidad,
+		'idReferencia' => 0, // No hay referencia para ingresos directos
+		'idUsuario' => $idUsuario,
+		'observacion' => 'Ingreso de existencia',
+		'multiplicador' => 1 // Aumenta la existencia
+	];
+	//return editar($sentencia, $parametros);
+	return insertarKardexProducto($kardex);
 }
 
-function restarExistenciaProducto($cantidad, $id){
-	$sentencia = "UPDATE productos SET existencia =  existencia - ? WHERE id = ?";
-	$parametros = [$cantidad, $id];
-	return editar($sentencia, $parametros);
+function restarExistenciaProducto($cantidad, $id, $idUsuario = 0){
+	/*$sentencia = "UPDATE productos SET existencia =  existencia - ? WHERE id = ?";
+	$parametros = [$cantidad, $id];*/
+	$kardex = (object) [
+		'idProducto' => $id,
+		'fecha' => date("Y-m-d H:i:s"),
+		'tipo' => 'salida',
+		'cantidad' => $cantidad,
+		'idReferencia' => 0, // No hay referencia para salidas directas
+		'idUsuario' => $idUsuario,
+		'observacion' => 'Salida de existencia',
+		'multiplicador' => -1 // Disminuye la existencia
+	];
+	//return editar($sentencia, $parametros);
+	return insertarKardexProducto($kardex);
 }
 
 function calcularGananciaInventario(){
@@ -596,23 +836,39 @@ function eliminarProducto($id){
 */
 //FUNCIONES DE LAS MARCAS
 
-function obtenerTotalesMarca(){
+function obtenerTotalesMarca($userId){
 	$sentencia = "SELECT marcas.nombreMarca, SUM(productos_vendidos.precio * productos_vendidos.cantidad) AS totalVentas
 	FROM productos_vendidos
+	INNER JOIN ventas ON ventas.id = productos_vendidos.idReferencia
 	INNER JOIN productos ON productos.id = productos_vendidos.idProducto
 	INNER JOIN marcas ON marcas.id = productos.marca
-	WHERE productos_vendidos.tipo = 'venta'
-	GROUP BY marcas.id";
+	WHERE productos_vendidos.tipo = 'venta'";
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia .= " and ventas.idUsuario = ?";
+		$parametros = [$userId];
+	}
+	$sentencia .= " GROUP BY marcas.id";
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		return selectPrepare($sentencia, $parametros);
+	}
 	return selectQuery($sentencia);
 }
 
-function obtenerTotalesCategoria(){
+function obtenerTotalesCategoria($userId){
 	$sentencia = "SELECT categorias.nombreCategoria, SUM(productos_vendidos.precio * productos_vendidos.cantidad) AS totalVentas
 	FROM productos_vendidos
+	INNER JOIN ventas ON ventas.id = productos_vendidos.idReferencia
 	INNER JOIN productos ON productos.id = productos_vendidos.idProducto
 	INNER JOIN categorias ON categorias.id = productos.categoria
-	WHERE productos_vendidos.tipo = 'venta'
-	GROUP BY categorias.id";
+	WHERE productos_vendidos.tipo = 'venta'";
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		$sentencia .= " and ventas.idUsuario = ? ";
+		$parametros = [$userId];
+	}
+	$sentencia .= " GROUP BY categorias.id";
+	if ($userId !== null && $userId !== 0 && $userId !== "") {
+		return selectPrepare($sentencia, $parametros);
+	}
 	return selectQuery($sentencia);
 }
 

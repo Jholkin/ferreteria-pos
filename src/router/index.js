@@ -19,6 +19,7 @@ import ConfiguracionComponent from '@/components/Configuracion/ConfiguracionComp
 import PerfilComponent from '@/components/Usuarios/PerfilComponent'
 import CambiarPassword from '@/components/Usuarios/CambiarPassword'
 import InicioComponent from '@/components/InicioComponent'
+import ProductComponent from '@/components/Productos/ProductComponent'
 
 Vue.use(VueRouter)
 
@@ -47,6 +48,11 @@ const routes = [
     path: '/marcas-y-categorias',
     name: 'MarcasCategorias',
     component: MarcasCategorias
+  },
+  {
+    path: '/productos',
+    name: 'ProductComponent',
+    component: ProductComponent
   },
   {
     path: '/realizar-venta',

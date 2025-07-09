@@ -16,7 +16,7 @@
                 <span></span>
                 Inicio
             </b-navbar-item>
-            <b-navbar-item  tag="router-link" :to="{ path: '/inventario' }">
+            <b-navbar-item v-if="mostrarBotonUsuarios" tag="router-link" :to="{ path: '/inventario' }">
                 <b-icon
                     icon="chart-bar-stacked"
                     size="is-medium">
@@ -25,14 +25,23 @@
                 Inventario
             </b-navbar-item> 
 
-            <b-navbar-item  tag="router-link" :to="{ path: '/marcas-y-categorias' }">
+            <b-navbar-item v-if="mostrarBotonUsuarios" tag="router-link" :to="{ path: '/marcas-y-categorias' }">
                 <b-icon
                     icon="archive"
                     size="is-medium">
                 </b-icon>
                 <span></span>
-                Marcas y categorías
-            </b-navbar-item> 
+                Marcas y Categorías
+            </b-navbar-item>
+
+            <b-navbar-item v-if="mostrarBotonUsuarios" tag="router-link" :to="{ path: '/productos' }">
+                <b-icon
+                    icon="archive"
+                    size="is-medium">
+                </b-icon>
+                <span></span>
+                Productos
+            </b-navbar-item>
 
             <b-navbar-item  tag="router-link" :to="{ path: '/realizar-venta' }">
                 <b-icon
@@ -81,13 +90,12 @@
                 </b-navbar-dropdown>
             </b-navbar-item>
 
-            <b-navbar-item  tag="router-link" :to="{ path: '/usuarios' }">
+            <b-navbar-item v-if="mostrarBotonUsuarios" tag="router-link" :to="{ path: '/usuarios' }">
                 <b-icon
                     icon="account"
                     size="is-medium">
                 </b-icon>
-                <span></span>
-                Usuarios
+                <span>Usuarios</span>
             </b-navbar-item>
             <b-navbar-item  tag="router-link" :to="{ path: '/clientes' }">
                 <b-icon
@@ -101,7 +109,7 @@
         </template>
 
         <template #end>
-            <b-navbar-item  tag="router-link" :to="{ path: '/configurar' }">
+            <b-navbar-item v-if="mostrarBotonUsuarios" tag="router-link" :to="{ path: '/configurar' }">
                 <b-icon
                     icon="cogs"
                     size="is-medium">
@@ -135,11 +143,22 @@
         name: "EncabezadoComponent",
 
         data:()=>({
-            usuario: ""
+            usuario: "",
+            rol: "",
+            cargando: true
         }),
-
+        computed: {
+            esAdmin() {
+                return this.rol === 'admin';
+            },
+            mostrarBotonUsuarios() {
+                return this.esAdmin && !this.cargando;
+            }
+        },
         mounted(){
             this.usuario = AyudanteSesion.obtenerDatosSesion().usuario
+            this.rol = AyudanteSesion.obtenerDatosSesion().rol
+            this.cargando = false
         },
 
         methods: {

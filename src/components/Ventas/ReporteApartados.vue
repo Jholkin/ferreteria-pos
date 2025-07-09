@@ -26,6 +26,7 @@
     import ComprobanteCompra from './ComprobanteCompra'
 	import HttpService from '../../Servicios/HttpService'
 	import Utiles from '../../Servicios/Utiles'
+    import AyudanteSesion from '../../Servicios/AyudanteSesion'
 
 	export default {
 		name: "ReporteApartados",
@@ -44,6 +45,9 @@
 		}),
 
 		mounted(){
+            if(AyudanteSesion.obtenerDatosSesion().rol !== 'admin'){
+                this.filtros.usuarioId = AyudanteSesion.obtenerDatosSesion().id
+            }
 			this.obtenerApartados()
 		},
 

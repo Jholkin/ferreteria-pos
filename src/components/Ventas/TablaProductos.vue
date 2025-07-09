@@ -9,6 +9,10 @@
 				{{ props.row.nombre }}
 			</b-table-column>
 
+			<b-table-column field="existencia" label="Existencia" v-slot="props">
+				{{ props.row.existencia }}
+			</b-table-column>
+
 			<b-table-column field="precio" label="Precio" v-slot="props">
 				${{ props.row.precio }}
 			</b-table-column>

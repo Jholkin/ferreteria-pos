@@ -9,6 +9,15 @@
         <b-field label="Teléfono del usuario" >
             <b-input step="any" icon="phone" type="number" placeholder="Ej. 2311459874" v-model="datosUsuario.telefono"></b-input>
         </b-field>
+        <b-field label="Rol del usuario">
+            <b-select
+                v-model="datosUsuario.rol"
+                icon="account-cog"
+                placeholder="Seleccione un rol">
+                <option value="admin">Administrador</option>
+                <option value="ventas">Ventas</option>
+            </b-select>
+        </b-field>
 
          <div class="buttons has-text-centered">
             <b-button type="is-primary" size="is-large" icon-left="check" @click="registrar">Registrar</b-button>
@@ -30,7 +39,8 @@
 			datosUsuario: {
 				usuario: "",
 				nombre: "",
-				telefono: ""
+				telefono: "",
+				rol: ""
 			},
 			mensajesError: [] 
 		}),
@@ -47,7 +57,8 @@
 				this.datosUsuario  = {
 					usuario: "",
 					nombre: "",
-					telefono: ""
+					telefono: "",
+					rol: ""
 				}
 			}
 		}

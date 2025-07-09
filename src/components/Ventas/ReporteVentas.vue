@@ -81,6 +81,7 @@
     import ComprobanteCompra from './ComprobanteCompra'
     import HttpService from '../../Servicios/HttpService'
     import Utiles from '../../Servicios/Utiles'
+    import AyudanteSesion from '../../Servicios/AyudanteSesion'
 
     export default {
         name: "ReporteVentas",
@@ -89,7 +90,7 @@
         data:()=>({
             filtros: {
                 fechaInicio: "",
-                fechaFin: ""
+                fechaFin: "",
             },
             cargando: false,
             ventas: [],
@@ -108,6 +109,9 @@
         }),
 
         mounted(){
+            if(AyudanteSesion.obtenerDatosSesion().rol !== 'admin'){
+                this.filtros.usuarioId = AyudanteSesion.obtenerDatosSesion().id
+            }
             this.obtenerVentas()
         },
 

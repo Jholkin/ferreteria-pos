@@ -25,6 +25,7 @@
     import Utiles from '../../Servicios/Utiles'
     import TablaCuentasApartados from './TablaCuentasApartados'
     import ComprobanteCompra from './ComprobanteCompra'
+    import AyudanteSesion from '../../Servicios/AyudanteSesion'
 
     export default {
         name: "ReporteCuentas",
@@ -39,10 +40,13 @@
             cuentas: [],
             totalesGenerales: [],
             cuentaSeleccionada: null,
-            mostrarComprobante: false
+            mostrarComprobante: false,
         }),
 
         mounted(){
+            if (AyudanteSesion.obtenerDatosSesion().rol !== 'admin') {
+                this.filtros.usuarioId = AyudanteSesion.obtenerDatosSesion().id
+            }
             this.obtenerCuentas()
         },
 

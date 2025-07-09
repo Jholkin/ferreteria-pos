@@ -205,15 +205,16 @@ CREATE TABLE `usuarios` (
   `usuario` varchar(50) NOT NULL,
   `nombre` varchar(100) NOT NULL,
   `telefono` varchar(20) NOT NULL,
-  `password` varchar(255) NOT NULL
+  `password` varchar(255) NOT NULL,
+  `rol` varchar(50) NOT NULL default 'ventas'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id`, `usuario`, `nombre`, `telefono`, `password`) VALUES
-(1, 'jheyson_hr', 'Jheyson Jhordy Huarauya Riquelme', '987654432', '$2y$10$gzUnjFNk5SUh3yGh2OXYeuIDtkzqUCGnJUnThqXjWoVU0/C9QCJb.');
+INSERT INTO `usuarios` (`id`, `usuario`, `nombre`, `telefono`, `password`, `rol`) VALUES
+(1, 'jheyson_hr', 'Jheyson Jhordy Huarauya Riquelme', '987654432', '$2y$10$gzUnjFNk5SUh3yGh2OXYeuIDtkzqUCGnJUnThqXjWoVU0/C9QCJb.', 'admin');
 
 -- --------------------------------------------------------
 

@@ -8,6 +8,7 @@ if (!$payload) {
 }
 
 include_once "funciones.php";
+include_once "restClient.php";
 
 $accion = $payload->accion;
 
@@ -34,6 +35,9 @@ switch ($accion) {
 	
 	case 'eliminar':
 		echo json_encode(eliminarCliente($payload->id));
+		break;
+	case 'obtener_por_dni':
+		echo json_encode(obtenerDni($payload->dni));
 		break;
 	
 	default:

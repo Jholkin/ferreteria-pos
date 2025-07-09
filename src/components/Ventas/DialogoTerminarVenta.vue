@@ -60,6 +60,13 @@
 			},
 
 			terminarVenta(){
+				if(!this.cliente.telefono || this.cliente.telefono === "") {
+					this.$buefy.toast.open({
+                         type: 'is-danger',
+                         message: 'Debes colocar un número de teléfono válido.'
+                    })
+                    return
+				}
 				if(this.pagado === "" || this.pagado < this.totalVenta) {
 					this.$buefy.toast.open({
                          type: 'is-danger',

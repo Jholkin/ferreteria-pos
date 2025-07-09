@@ -7,6 +7,10 @@
 				{{ props.row.nombre }}
 			</b-table-column>
 
+			<b-table-column field="dni" label="Dni del cliente" sortable searchable v-slot="props">
+				{{ props.row.dni }}
+			</b-table-column>
+
 			<b-table-column field="telefono" label="Teléfono" sortable searchable v-slot="props">
 				{{ props.row.telefono }}
 			</b-table-column>

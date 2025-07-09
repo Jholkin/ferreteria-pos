@@ -8,6 +8,7 @@ if (!$payload) {
 }
 
 include_once "funciones.php";
+include_once "phpMailer.php";
 
 $accion = $payload->accion;
 
@@ -63,6 +64,10 @@ switch ($accion) {
 		echo json_encode(abonarACuentaApartado($payload->total, $payload->id));
 		break;
 	
+	case 'enviar_comprobante':
+		echo json_encode(sendMail($payload->datos));
+		break;
+
 	default:
 		echo json_encode("No se reconoce");
 		break;

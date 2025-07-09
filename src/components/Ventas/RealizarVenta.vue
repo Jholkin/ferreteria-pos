@@ -53,6 +53,17 @@ aria-modal>
 <dialogo-cotizar :totalVenta="total" @close="onCerrar" @terminar="onTerminar" v-if="mostrarRegistrarCotizacion"></dialogo-cotizar>
 </b-modal>
 <comprobante-compra :venta="this.ventaRealizada" :tipo="tipoVenta" @impreso="onImpreso" v-if="mostrarComprobante" />
+<b-modal
+v-model="mostrarOpcionesComprobante"
+has-modal-card
+trap-focus
+:destroy-on-hide="false"
+aria-role="dialog"
+aria-label="Modal Opciones Comprobante"
+close-button-aria-label="Close"
+aria-modal>
+    <dialogo-opciones-comprobante :venta="ventaRealizada" @close="mostrarOpcionesComprobante = false" @imprimir="mostrarComprobanteImprimir" @whatsapp="mostrarComprobanteWhatsApp" />
+</b-modal>
 </section>
 </template>
 <script>
@@ -63,6 +74,7 @@ aria-modal>
   import DialogoAgregarApartado from './DialogoAgregarApartado'
   import DialogoCotizar from './DialogoCotizar'
   import ComprobanteCompra from './ComprobanteCompra'
+  import DialogoOpcionesComprobante from './DialogoOpcionesComprobante'
   import MensajeInicial from '../Extras/MensajeInicial'
   import AyudanteSesion from '../../Servicios/AyudanteSesion'
   import HttpService from '../../Servicios/HttpService'
@@ -77,7 +89,8 @@ aria-modal>
       DialogoAgregarApartado,
       DialogoCotizar,
       MensajeInicial,
-      ComprobanteCompra
+      ComprobanteCompra,
+      DialogoOpcionesComprobante
     },
 
     data:()=>({
@@ -91,23 +104,40 @@ aria-modal>
       mostrarRegistrarCotizacion: false,
       ventaRealizada: null,
       mostrarComprobante: false,
+      mostrarOpcionesComprobante: false,
       tipoVenta: ""
     }),
 
     methods: {
       onImpreso(resultado){
         this.mostrarComprobante = resultado
+        this.mostrarOpcionesComprobante = false
+      },
+
+      mostrarComprobanteImprimir() {
+        this.mostrarOpcionesComprobante = false
+        this.mostrarComprobante = true
+      },
+
+      mostrarComprobanteWhatsApp() {
+        this.mostrarOpcionesComprobante = false
+        this.$buefy.toast.open({
+          type: 'is-info',
+          message: 'Funcionalidad de WhatsApp en desarrollo'
+        })
       },
 
       onTerminar(venta){
         this.ventaRealizada = {
           total: this.total,
           productos: this.productos,
-          cliente: venta.cliente.id,
+          cliente: venta.cliente.id || 0,
+          contactoCliente: venta.cliente.telefono,
           usuario: AyudanteSesion.obtenerDatosSesion().id,
           nombreCliente: (venta.cliente.nombre) ? venta.cliente.nombre : 'MOSTRADOR',
           nombreUsuario: AyudanteSesion.obtenerDatosSesion().usuario,
-          fecha: new Date().toJSON().slice(0,10).replace(/-/g,'/')
+          fecha: new Date().toJSON().slice(0,10).replace(/-/g,'/'),
+          objetoCliente: venta.cliente
         }
 
         let tipo = venta.tipo
@@ -117,26 +147,21 @@ aria-modal>
           this.ventaRealizada.tipo = 'venta'
           this.ventaRealizada.pagado = venta.pagado
           this.ventaRealizada.cambio = venta.cambio
-          console.log(this.ventaRealizada)
           break
           case 'cuenta' :
           this.ventaRealizada.tipo = 'cuenta'
           this.ventaRealizada.pagado = venta.pagado
           this.ventaRealizada.porPagar = venta.porPagar
-          console.log(this.ventaRealizada)
           break
           case 'apartado' :
           this.ventaRealizada.tipo = 'apartado'
           this.ventaRealizada.pagado = venta.pagado
           this.ventaRealizada.porPagar = venta.porPagar
-          console.log(this.ventaRealizada)
           break
           case 'cotiza' :
           this.ventaRealizada.tipo = 'cotiza'
-          console.log(this.ventaRealizada)
           break
         }
-
 
         this.tipoVenta = venta.tipo
 
@@ -148,7 +173,6 @@ aria-modal>
 
         HttpService.registrar('vender.php', datos)
         .then(registrado => {
-          console.log(registrado)
           if(registrado){
             this.productos = []
             this.total = 0
@@ -159,12 +183,9 @@ aria-modal>
               type: 'is-info',
               message: tipo.toUpperCase() + ' registrado con éxito'
             })
-            this.mostrarComprobante = true
+            this.mostrarOpcionesComprobante = true
           }
-
         })
-
-
       },
 
       cancelarVenta(){   
@@ -182,7 +203,6 @@ aria-modal>
           }
         })
       },
-
 
       abrirDialogo(opcion){
         this.mostrarDialogo = true

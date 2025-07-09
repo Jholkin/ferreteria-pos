@@ -10,9 +10,9 @@
   </div>
 </template>
 <script>
-  import EncabezadoComponent from './components/EncabezadoComponent'
-  import InicioSesion from './components/Usuarios/InicioSesion'
-  import AyudanteSesion from './Servicios/AyudanteSesion'
+  import EncabezadoComponent from '@/components/EncabezadoComponent.vue'
+  import InicioSesion from '@/components/Usuarios/InicioSesion.vue'
+  import AyudanteSesion from '@/Servicios/AyudanteSesion'
 
   export default {
     name: "App", 
