@@ -24,7 +24,7 @@
                     <h3 class="title is-3 has-text-info-dark has-text-weight-bold">Teléfono: {{ informacionNegocio.telefono }}</h3>
                 </div>
                 
-                <img src="http://18.218.238.88/pos/api/logos/logo.png" width="300" height="300" style="display: block; margin:0 auto;">
+                <img src="http://18.218.238.88/api/logos/logo.png" width="300" height="300" style="display: block; margin:0 auto;">
             </div>
       </div>
     </section>

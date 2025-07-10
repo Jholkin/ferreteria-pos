@@ -1,5 +1,5 @@
 // Define una constante para la URL base de la API
-const RUTA_GLOBAL = "http://18.218.238.88/pos/api/";
+const RUTA_GLOBAL = "http://18.218.238.88/api/";
 
 // Define un objeto llamado HttpService que contiene varios métodos asíncronos para interactuar con la API
 const HttpService =  {
