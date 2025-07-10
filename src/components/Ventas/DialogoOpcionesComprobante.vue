@@ -113,8 +113,7 @@ export default {
             window.open(url, '_blank')
             this.$emit('close')
         },
-
-        formatearMensajeComprobante() {
+        formatearMensajeComprobanteParaWhatssapp() {
             let mensaje = `*${this.titulo}*\n`
             mensaje += `*${this.datosNegocio.nombre}*\n`
             mensaje += `Telefono: ${this.datosNegocio.telefono}\n\n`
@@ -147,6 +146,38 @@ export default {
             
             return mensaje
         },
+        formatearMensajeComprobante() {
+            // Prepara el payload para el backend con la estructura sugerida
+            const datosNegocio = this.datosNegocio || {};
+            const venta = this.venta || {};
+            const productos = (venta.productos || []).map(p => ({
+                nombre: p.nombre,
+                precio: p.precio,
+                cantidad: p.cantidad
+            }));
+            return {
+                from: datosNegocio.correo || "no-reply@tusistema.com",
+                fromName: datosNegocio.nombre || "Negocio",
+                to: this.correoCliente,
+                toName: venta.nombreCliente || "Cliente",
+                subject: this.titulo,
+                body: `<b>${this.titulo}</b><br><b>${datosNegocio.nombre}</b><br>Telefono: ${datosNegocio.telefono}<br><br>Cliente: ${venta.nombreCliente}<br>Atiende: ${venta.nombreUsuario}<br>Fecha: ${venta.fecha}<br><br>`,
+                negocio: {
+                    nombre: datosNegocio.nombre || "Negocio",
+                    telefono: datosNegocio.telefono || "",
+                    direccion: datosNegocio.direccion || ""
+                },
+                venta: {
+                    nombreCliente: venta.nombreCliente || "",
+                    nombreUsuario: venta.nombreUsuario || "",
+                    fecha: venta.fecha || "",
+                    total: venta.total || 0,
+                    pagado: venta.pagado || 0,
+                    cambio: (venta.pagado && venta.total) ? (venta.pagado - venta.total) : 0,
+                    productos
+                }
+            };
+        },
         validarCorreo() {
             // Expresión regular básica para validar correo electrónico
             const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -172,20 +203,11 @@ export default {
             if (!this.validarCorreo()) return
             this.generarTitulo(this.venta.tipo)
             this.obtenerDatosNegocio()
-            const mensaje = this.formatearMensajeComprobante().replace(/\n/g, "<br>")
-            const datosCorreo = {
-                to: this.correoCliente,
-                toName: this.venta.nombreCliente || "Cliente",
-                subject: this.titulo,
-                body: mensaje,
-                from: this.datosNegocio.correo || "no-reply@tusistema.com",
-                fromName: this.datosNegocio.nombre || "Negocio"
-            }
+            const datosCorreo = this.formatearMensajeComprobante();
             HttpService.registrar('vender.php', {
                 accion: 'enviar_comprobante',
                 datos: datosCorreo
             }).then(respuesta => {
-                console.log(respuesta);
                 if (respuesta && respuesta.success) {
                     this.$buefy.toast.open({
                         type: 'is-success',
@@ -200,7 +222,6 @@ export default {
                     })
                 }
             }).catch(error => {
-                console.error(error);
                 this.$buefy.toast.open({
                     type: 'is-danger',
                     message: 'Error al enviar el correo.'
