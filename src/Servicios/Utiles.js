@@ -1,5 +1,5 @@
    import Chart from 'chart.js'
-   const RUTA = 'http://localhost/pos/api' 
+   const RUTA = 'http://18.218.238.88/pos/api' 
    const MESES = ["Enero" ,"Febrero" ,"Marzo" ,"Abril" ,"Mayo" ,"Junio" ,"Julio" ,"Agosto" ,"Septiembre" ,"Octubre" ,"Noviembre" ,"Diciembre"]
 
    const Utiles = {
