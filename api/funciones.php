@@ -994,7 +994,7 @@ function conectarBD(){
  	$host = "localhost";
 	$db   = "pos";
 	$user = "root";
-	$pass = "";
+	$pass = "root123";
 	$charset = 'utf8mb4';
 
 	$options = [
